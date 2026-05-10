@@ -1,5 +1,5 @@
 
-# Indices 0..23 in this file are kept identical to v5_latent.tokenizer.AATokenizer 
+# Indices 0..23 in this file are kept identical to LD4LG.tokenizer.AATokenizer 
 # so the same pre-tokenized memmap data can be re-used without re-encoding.
 
 from typing import List

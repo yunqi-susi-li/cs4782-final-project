@@ -1,4 +1,4 @@
-# v5_latent — Latent Diffusion for Antibody Sequences (LD4LG adaptation)
+# LD4LG — Latent Diffusion for Antibody Sequences (LD4LG adaptation)
 
 Continuous latent diffusion for paired (VH ⊕ linker ⊕ VL) antibody sequences,
 adapted from
@@ -9,11 +9,11 @@ adapted from
 
 with multi-conditional classifier-free guidance over (isotype, V-gene
 family, light-chain locus). Compared against the discrete-diffusion DPLM
-baseline in `v4_dplm2/`.
+baseline in `DPLM/`.
 
 ## Why latent diffusion
 
-Discrete diffusion (v4_dplm2) operates directly over the AA token alphabet.
+Discrete diffusion (DPLM/) operates directly over the AA token alphabet.
 Continuous latent diffusion instead first compresses each ~241 aa sequence
 to a fixed-shape `32 × 64` latent via a learned autoencoder, then runs a
 v-prediction Gaussian diffusion in the latent space. Two reasons to try this:
@@ -74,7 +74,7 @@ v-prediction Gaussian diffusion in the latent space. Two reasons to try this:
 ## Files
 
 ```
-v5_latent/
+LD4LG/
 ├── __init__.py
 ├── tokenizer.py            # AA tokenizer (24 tokens)
 ├── nn_utils.py             # RMSNorm, GeGLU, MHA + QK-Norm, AdaLN,
@@ -103,22 +103,22 @@ same preprocessed memmap directory.
 
 ```bash
 # 0) Preprocess raw OAS export(s) into int16 memmaps
-python -m code.diffusion.v5_latent.preprocess \
+python -m code.diffusion.LD4LG.preprocess \
     --archives run_090_export.tar.gz \
     --out processed/ --max-len 288
 
 # 1) Stage 1: language autoencoder, 50k steps
-python -m code.diffusion.v5_latent.train_autoencoder \
+python -m code.diffusion.LD4LG.train_autoencoder \
     --data processed/ --out runs/ae --steps 50000
 
 # 2) Stage 2: latent diffusion on the frozen AE, 250k steps
-python -m code.diffusion.v5_latent.train_diffusion \
+python -m code.diffusion.LD4LG.train_diffusion \
     --data    processed/ \
     --ae-ckpt runs/ae/autoencoder_latest.pt \
     --out     runs/diffusion --steps 250000
 
 # 3) Sample one (iso, vfam, locus) cell
-python -m code.diffusion.v5_latent.sample \
+python -m code.diffusion.LD4LG.sample \
     --ae-ckpt   runs/ae/autoencoder_latest.pt \
     --diff-ckpt runs/diffusion/diffusion_latest.pt \
     --iso IGHG --vfam IGHV3 --loc K \
@@ -126,7 +126,7 @@ python -m code.diffusion.v5_latent.sample \
     --out samples/IGHG_IGHV3_K.fasta
 
 # 4) Eval
-python -m code.diffusion.v5_latent.eval \
+python -m code.diffusion.LD4LG.eval \
     --fasta samples/IGHG_IGHV3_K.fasta \
     --train-tokens processed/train.tokens.npy \
     --train-meta   processed/train.meta.json \

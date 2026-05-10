@@ -1,7 +1,7 @@
 """
 v4_dplm — DPLM-style discrete absorbing diffusion baseline.
 
-Apples-to-apples comparison against v5_latent's continuous latent
+Apples-to-apples comparison against LD4LG's continuous latent
 diffusion: same data, conditioning, evaluation and only the diffusion
 process differs.
 """

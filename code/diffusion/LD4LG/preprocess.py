@@ -15,9 +15,9 @@ Output (written to --out):
   {split}.meta.json
 
 Examples:
-  python -m v5_latent.preprocess --archives run_090_export.tar.gz \\
+  python -m LD4LG.preprocess --archives run_090_export.tar.gz \\
       --out /path/processed --max-len 288
-  python -m v5_latent.preprocess --tsv-dir /path/to/tsvs \\
+  python -m LD4LG.preprocess --tsv-dir /path/to/tsvs \\
       --out /path/processed --max-len 288
 """
 
