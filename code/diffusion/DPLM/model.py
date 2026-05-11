@@ -54,11 +54,19 @@ class MultiClassConditioning(nn.Module):
     """Three independent class embeddings with per-condition CFG dropout.
     Same contract as LD4LG.denoiser.MultiClassConditioning so train/inference
     CFG behaviour is identical between the two tracks. Y.L.
+
+    Modify and add joint CFG ablation for comparison. May 9th, 2026. Y.L.
     """
 
-    def __init__(self, cfg, dim, cond_drop_prob=0.1):
+    # def __init__(self, cfg, dim, cond_drop_prob=0.1):
+    #     super().__init__()
+    #     self.cond_drop_prob = cond_drop_prob
+
+    def __init__(self, cfg: DPLMConfig, dim: int, cond_drop_prob: float = 0.1, joint_cfg: bool = False):
         super().__init__()
+        self.cfg = cfg
         self.cond_drop_prob = cond_drop_prob
+        self.joint_cfg = joint_cfg
 
         self.iso_emb  = nn.Embedding(cfg.num_isotypes,    dim)
         self.vfam_emb = nn.Embedding(cfg.num_v_families,  dim)
@@ -81,7 +89,15 @@ class MultiClassConditioning(nn.Module):
             iso  = torch.full_like(iso,  self.null_iso)
             vfam = torch.full_like(vfam, self.null_vfam)
             loc  = torch.full_like(loc,  self.null_loc)
-        else:
+        # Modify and add elif for joint CFG ablation for comparison. May 9th, 2026. Y.L.
+        elif self.joint_cfg:
+            # same Bernoulli mask drops all 3 conditions together
+            if self.training and self.cond_drop_prob > 0.0:
+                mask = torch.rand(iso.shape, device=iso.device) < self.cond_drop_prob
+                iso  = torch.where(mask, torch.full_like(iso,  self.null_iso),  iso)
+                vfam = torch.where(mask, torch.full_like(vfam, self.null_vfam), vfam)
+                loc  = torch.where(mask, torch.full_like(loc,  self.null_loc),  loc)
+        else: #indepndent CFG (drop indepenntly)
             iso  = self._maybe_drop(iso,  self.null_iso)
             vfam = self._maybe_drop(vfam, self.null_vfam)
             loc  = self._maybe_drop(loc,  self.null_loc)
@@ -98,8 +114,9 @@ class DPLM(nn.Module):
         self.tok_emb = nn.Embedding(cfg.vocab_size, cfg.dim, padding_idx=cfg.pad_id)
         self.pos = LearnedPositionalEmbedding(cfg.max_len, cfg.dim)
         self.emb_drop = nn.Dropout(cfg.dropout)
-
-        self.cond = MultiClassConditioning(cfg, cfg.dim, cond_drop_prob=cond_drop_prob)
+        # Modify for joint CFG ablation for comparison. May 9th, 2026. Y.L.
+        # self.cond = MultiClassConditioning(cfg, cfg.dim, cond_drop_prob=cond_drop_prob)
+        self.cond = MultiClassConditioning(cfg, cfg.dim, cond_drop_prob=cond_drop_prob, joint_cfg=joint_cfg)
 
         self.layers = nn.ModuleList([DPLMBlock(cfg) for _ in range(cfg.num_layers)])
         self.final_norm = nn.LayerNorm(cfg.dim)

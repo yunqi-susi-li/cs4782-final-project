@@ -38,6 +38,9 @@ def main():
     ap.add_argument("--amp", choices=["bf16", "fp16", "off"], default="bf16")
     ap.add_argument("--max-len", type=int, default=288)
     ap.add_argument("--resume", type=Path, default=None)
+    # Modify and add joint cfg for joint CFG ablation May 9th, 2026 Y.L.
+    ap.add_argument("--joint-cfg", action="store_true",
+                help="use joint CFG dropout (all 3 conditions dropped together) instead of independent")
     args = ap.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -60,7 +63,9 @@ def main():
         num_v_families=ds_train.num_v_families,
         num_light_loci=ds_train.num_light_loci,
     )
-    model = DPLM(cfg_model, cond_drop_prob=args.cond_drop).to(device)
+    # Modify for joint CFG ablation May 9th, 2026 Y.L.
+    #model = DPLM(cfg_model, cond_drop_prob=args.cond_drop).to(device)
+    model = DPLM(cfg_model, cond_drop_prob=args.cond_drop, joint_cfg=args.joint_cfg).to(device)
     diff_cfg = DPLMDiffusionConfig(cfg_weight=args.cfg_weight)
     diffusion = DPLMDiffusion(model=model, cfg=diff_cfg).to(device)
     print(f"[model] {sum(p.numel() for p in model.parameters()):,} parameters")
