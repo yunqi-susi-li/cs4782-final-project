@@ -1,222 +1,227 @@
-# Re-implementing DPLM-2 for BCR CDR3 Conditional Generation
+# Multi-Condition Diffusion for Paired Antibody Sequences
 
-**CS 4782 — Introduction to Deep Learning, Final Project (Spring 2026)**
-Cornell University
+**CS 5782/4782 — Introduction to Deep Learning, Final Project (Spring 2026)**
+Cornell University · **Authors:** Yunqi Li, Yonglin Zhang
 
-**Authors:** Yunqi Li, Yonglin Zhang
-
-> TL;DR — We re-implement **DPLM-2** (Wang et al., ICLR 2025) from scratch in
-> PyTorch and adapt it to antibody heavy-chain CDR3 generation, replacing
-> DPLM-2's `[sequence] ⊕ [structure]` shared stream with
-> `[germline CDR3] ⊕ [observed CDR3]`. We add a novel **germline-edit-track
-> auxiliary head** that classifies each observed AA as
-> `TEMPLATED / SUBSTITUTED / INSERTED / TRIMMED`, making
-> `observed = germline + V(D)J edits + SHM` an explicit modeling target.
-> Against our own pre-DPLM-2 baselines, adding DPLM-2's ideas yields a **+20 pp**
-> jump in masked-AA recovery on held-out OAS heavy-chain data (57.7% → 77.0%).
+> **TL;DR.** We re-implement and compare two conditional-diffusion language
+> models—**LD4LG** (Lovelace et al., NeurIPS 2023; continuous latent
+> diffusion) and **DPLM** (Wang et al., ICLR 2024; discrete absorbing
+> diffusion)—on 2.17M paired antibody sequences. We extend both with
+> three-way independent classifier-free guidance and add a 20-configuration
+> temperature × top-p decoding sweep for DPLM. The resulting four
+> (model, decoder) configurations characterize a quality–diversity Pareto
+> frontier: LD4LG dominates on sequence recovery (SRR = 0.753) and perplexity
+> (1.08); decoding choice alone, with DPLM weights held fixed, spans
+> foldability from 96.7% to 25.9%.
 
 ---
 
 ## 1. Introduction
 
-This repository re-implements and extends
+This repository re-implements and compares two papers on the same conditional
+sequence-generation task:
 
-> **DPLM-2: A Multimodal Diffusion Protein Language Model.**
-> Wang, X., Zheng, Z., Ye, F., Xue, D., Huang, S., Gu, Q.
-> Nanjing University & ByteDance Research, ICLR 2025.
-> Project page: <https://bytedance.github.io/dplm/dplm-2>
+- **Latent Diffusion for Language Generation (LD4LG).** Lovelace, J., Kishore,
+  V., Wan, C., Shekhtman, E., Weinberger, K. Q. NeurIPS 2023.
+  <https://github.com/justinlovelace/latent-diffusion-for-language>
+- **Diffusion Language Models Are Versatile Protein Learners (DPLM).**
+  Wang, X., Zheng, Z., Ye, F., Xue, D., Huang, S., Gu, Q. ICLR 2024.
 
-DPLM-2 is an absorbing-state discrete-diffusion protein language model that
-operates over a shared stream of `[sequence] ⊕ [structure]` tokens, trained with
-MDLM-style importance weighting `w(t) = -log(ᾱ_t)/(1 - ᾱ_t)` (Sahoo et al., 2024)
-on top of the D3PM framework (Austin et al., 2021). DPLM-2 extends the original
-DPLM with a lookup-free-quantized structure tokenizer so that one joint
-transformer learns the joint distribution of sequence and structure, as well
-as their marginals and conditionals.
-
-Our work additionally explores latent diffusion for sequences via
-
-> **Latent Diffusion for Language Generation (LD4LG).**
-> Lovelace, J., Kishore, V., Wan, C., Shekhtman, E., Weinberger, K. Q.
-> Cornell University, NeurIPS 2023.
-> Code: <https://github.com/justinlovelace/latent-diffusion-for-language>
-
-LD4LG learns a continuous diffusion model in the latent space of a fixed
-pretrained encoder-decoder language model. It was covered in CS 4782 lectures
-by Prof. Weinberger; our exploratory `v5_latent` track (see
-[`code/diffusion/v5_latent/`](./code/diffusion/v5_latent/)) adapts it to
-antibody CDR3s.
-
-We are a 2-person group (Yunqi Li, Yonglin Zhang). Our work picks up from the
-baseline approved in proposal #302 (self-implemented LoRA on ESM-2 for a TCR
-task) and pivots the main re-implementation target to **DPLM-2** and the
-downstream task to **BCR heavy-chain CDR3 conditional generation** on OAS
-data. The pivot was approved by the course staff; the pivot memo is kept at
-[`report/ED_POST_DRAFT_v4.md`](./report/ED_POST_DRAFT_v4.md) for the record.
+The task is conditional generation of paired antibody chains
+(V$_H$ ⊕ V$_L$): each training example is a $\le$288-token amino-acid string
+plus three categorical labels (isotype, V-gene family, light-chain locus).
+LD4LG runs continuous Gaussian diffusion in a 32 × 64 latent produced by a
+language autoencoder; DPLM runs discrete absorbing diffusion directly over the
+24-symbol AA alphabet. Both originally support a single class condition, but
+antibodies factor naturally into three semantically independent labels,
+motivating our multi-condition extension. The comparison is symmetric—neither
+paradigm is a baseline; we ask where each lands on the antibody-domain
+quality–diversity Pareto frontier and which decoding choices control that
+position.
 
 ## 2. Chosen Result
 
-We reproduce DPLM-2's **masked-AA recovery** metric on a corrupted-positions
-denoising task — the headline metric DPLM-2 uses to evaluate how well its
-shared-stream + MDLM-weighted training recovers masked residues given visible
-context. *(Original paper: reported for the sequence-only and sequence+structure
-settings; we reproduce the spirit of that metric, adapted to the
-observed-vs-germline CDR3 setting described above.)*
-
-Why this result: it is the most direct probe of DPLM-2's central claim that
-absorbing-state diffusion with MDLM weighting and a shared token stream is a
-better training recipe than vanilla MLM / plain D3PM, and it is the same metric
-we had already instrumented for the #302 ESM-LoRA baselines — making the
-before/after comparison apples-to-apples.
+We target LD4LG's CFG-controlled diversity–quality trade-off (Sec. 3, Fig. 3
+of Lovelace et al., 2023) and DPLM's recovery performance (Tab. 3 of Wang et
+al., 2024), adapted to the antibody domain. The natural-language fluency
+oracle has no antibody analogue, so we substitute two structural-biology
+oracles—IgFold-predicted pLDDT > 70 (foldability) and HMMER hit rate against
+the Pfam Ig V-set HMM (domain validity)—and use corpus 4-gram diversity as
+the diversity axis. See `report/` for the full 2-page analysis.
 
 ## 3. GitHub Contents
 
 ```
 cs4782-final-project/
-├── README.md                 ← this file
-├── LICENSE                   ← MIT
+├── README.md                       this file
+├── LICENSE                         MIT
 ├── requirements.txt
-├── .gitignore
-├── code/                     ← all source
-│   ├── baselines/{esm_linear, esm_lora}
-│   ├── diffusion/{v1_plain, v3_d3pm_germline, v4_dplm2, v5_latent}
-│   ├── common/               ← data, alignment, LoRA, metrics, diffusion utils
-│   └── configs/              ← one YAML per run
-├── data/                     ← OAS download + preprocessing pipeline (raw/processed gitignored)
-├── results/{figures,tables,logs}
-├── poster/                   ← poster.pdf (due Apr 30 / May 5)
-└── report/                   ← group_topic_2page_report.pdf (due May 12)
+├── code/
+│   ├── README.md
+│   ├── common/                     shared evaluation suite
+│   ├── data_preprocessing/         OAS → memmap pipeline
+│   └── diffusion/
+│       ├── DPLM/                   discrete absorbing diffusion
+│       └── LD4LG/                  continuous latent diffusion
+├── data/                           OAS download + preprocessing notes
+├── results/{figures,tables}        per-cell metrics, Pareto data
+├── poster/                         final-presentation poster (PDF)
+└── report/                         2-page summary (PDF)
 ```
 
-Each subdirectory has its own `README.md` with details.
+Each subdirectory has its own README.
 
 ## 4. Re-implementation Details
 
-- **Model:** shared-stream Transformer denoiser consuming
-  `[V/D/J/isotype/SHM header tokens] ⊕ [germline CDR3] ⊕ [observed CDR3]`.
-  ~19 M params for v4.
-- **Tokenizer:** 24 AA-level tokens (20 AA + `<PAD>` + `<MASK>` + `<BOS>` + `<EOS>`),
-  re-initialized from scratch — DPLM-2's structure tokenizer does not apply.
-- **Training objective:** absorbing-state discrete diffusion cross-entropy over
-  the observed-CDR3 segment, weighted by `w(t) = -log(ᾱ_t)/(1 - ᾱ_t)` (MDLM),
-  plus the **edit-head auxiliary loss** `λ_edit · CE(edit_label, edit_pred)`.
-- **Sampler:** iterative unmasking — start with all observed positions masked,
-  unmask top-`k_t` by argmax (or low-temperature sample) at each step.
-- **Dataset:** OAS paired heavy chains, deduped + clustered at 95% identity →
-  **2.28 M unique sequences**; 80/10/10 cluster-level split;
-  **< 0.001%** sequence-level leakage.
-- **Metrics:** masked-AA recovery on corrupted OBS positions;
-  per-edit-class accuracy (4-way confusion);
-  generative metrics — length distribution match, motif conservation,
-  V/J consistency of sampled CDR3s.
-- **Baselines (all implemented from scratch in PyTorch, no PEFT/HuggingFace
-  LoRA, no DPLM codebase):** P0 (frozen ESM + linear), P1/P2 (self-implemented
-  LoRA on ESM, plain + region-aware), v1A/v1B (plain masked discrete diffusion
-  without germline), v3_prod/v3_scale (D3PM + germline cross-attention).
-- **Modifications vs the DPLM-2 paper:** structure modality replaced by
-  germline CDR3 template; V/D/J/isotype/SHM conditioning injected as header
-  tokens; edit-track auxiliary head added on top of the last transformer layer
-  (our extension).
+**Dataset.** 2.17M paired V$_H$ ⊕ GGGGSGGGGS ⊕ V$_L$ chains from the Observed
+Antibody Space (OAS), MMseqs2-deduplicated at 95%/90% sequence identity for
+0% train/test leakage. Right-padded to 288 tokens over a 24-symbol AA
+vocabulary. An 18-cell stratified test split (3 isotypes × 3 V-families × 2
+loci) provides 200 reference + 512 generated sequences per cell.
 
-See [`code/diffusion/v4_dplm2/README.md`](./code/diffusion/v4_dplm2/README.md)
-for the full spec.
+**LD4LG.** Stage 1: encoder–Perceiver-Resampler–decoder autoencoder mapping
+tokens to a unit-norm 32 × 64 latent (val CE = 0.038, 97.7% reconstruction).
+Stage 2: 12-layer pre-LN Transformer denoiser with QK-RMSNorm, GeGLU FFN,
+AdaLN time/class conditioning, and U-ViT-style dense skips; v-prediction loss
+(Salimans & Ho, 2022). Extensions vs the paper: AE trained from scratch (BART
+vocabulary incompatible with the 24-AA alphabet); CFG extended to three
+independent conditions, each with its own null index; self-conditioning
+disabled (DDP rank divergence).
+
+**DPLM.** 12-layer bidirectional Transformer sharing all blocks with the
+LD4LG denoiser, trained with absorbing-state cross-entropy under
+γ(t) = 1 − cos²(πt/2). Sampling via confidence-ranked iterative unmasking.
+Extensions vs the paper: same 3-way independent CFG over per-position
+logits; stochastic categorical sampling (temperature + nucleus top-p)
+replaces the released codebase's greedy argmax, which we observed collapses
+to a single near-template output per condition; a 20-configuration grid
+sweep (T × top-p) to locate the quality–diversity sweet spot.
+
+**Evaluation** (`code/common/`). Six metrics: linker recovery (format),
+4-gram diversity, V-family classifier accuracy (conditional fidelity),
+Sequence Recovery Rate (SRR), held-out NLL perplexity, HMMER hit rate. Plus
+exact-match and Hamming-$\le 3$ training memorization checks across all
+9,216 generated sequences.
 
 ## 5. Reproduction Steps
 
 ```bash
-# 1. clone
-git clone https://github.com/<org-or-user>/cs4782-final-project.git
+# 1. Clone + env (Python 3.10+, CUDA 11.8+)
+git clone https://github.com/yunqi-susi-li/cs4782-final-project.git
 cd cs4782-final-project
-
-# 2. environment (Python 3.10+; CUDA 11.8+ recommended)
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 3. data (downloads ~40 GB OAS → dedups + clusters → parquet shards)
-python -m code.common.data --stage download  --out data/raw/
-python -m code.common.data --stage preprocess --in data/raw/ --out data/processed/ \
-    --cluster-identity 0.95 --min-cdr3-len 5 --max-cdr3-len 30
+# 2. Preprocess raw OAS → int16 memmaps (see data/README.md)
+python -m code.diffusion.LD4LG.preprocess \
+    --archives <oas_export.tar.gz> --out processed/ --max-len 288
 
-# 4. train the main model (v4 — DPLM-2 + edit head)
-python -m code.diffusion.v4_dplm2.train --config code/configs/v4_dplm2.yaml
+# 3. Train LD4LG (~9 h on a single H100)
+python -m code.diffusion.LD4LG.train_autoencoder \
+    --data processed/ --out runs/ae --steps 50000
+python -m code.diffusion.LD4LG.train_diffusion \
+    --data processed/ --ae-ckpt runs/ae/autoencoder_latest.pt \
+    --out runs/ld4lg --steps 250000
 
-# 5. evaluate
-python -m code.diffusion.v4_dplm2.eval   --config code/configs/v4_dplm2.yaml \
-       --ckpt results/logs/v4_dplm2/best.ckpt
+# 4. Train DPLM (~5 h on a single H100)
+python -m code.diffusion.DPLM.train \
+    --data processed/ --out runs/dplm --steps 100000
 
-# 6. sample conditional CDR3s
-python -m code.diffusion.v4_dplm2.sample --config code/configs/v4_dplm2.yaml \
-       --ckpt results/logs/v4_dplm2/best.ckpt --n 10000 \
-       --out results/tables/v4_samples.parquet
+# 5. Sample one cell from each model
+python -m code.diffusion.LD4LG.sample \
+    --ae-ckpt runs/ae/autoencoder_latest.pt \
+    --diff-ckpt runs/ld4lg/diffusion_latest.pt \
+    --iso IGHG --vfam IGHV3 --loc K --num 512 --cfg 2.0 \
+    --out samples/ld4lg/IGHG_IGHV3_K.fasta
+
+python -m code.diffusion.DPLM.sample \
+    --ckpt runs/dplm/dplm_latest.pt \
+    --iso IGHG --vfam IGHV3 --loc K --num 512 \
+    --sample-mode stochastic --temperature 1.0 --top-p 0.95 \
+    --out samples/dplm/IGHG_IGHV3_K.fasta
+
+# 6. DPLM decoding sweep (locates Pareto-best (T, top-p))
+python -m code.diffusion.DPLM.sampling_sweep \
+    --ckpt runs/dplm/dplm_latest.pt \
+    --out results/dplm_sweep.json --n-per-config 64
+
+# 7. Evaluate one generated FASTA
+python -m code.diffusion.LD4LG.eval \
+    --fasta samples/ld4lg/IGHG_IGHV3_K.fasta \
+    --train-tokens processed/train.tokens.npy \
+    --train-meta processed/train.meta.json \
+    --out results/eval_reports/ld4lg_IGHG_IGHV3_K.json
 ```
 
-**Baselines** follow the same pattern — replace `v4_dplm2` and the config path.
-
-**Hardware:**
-- Full v4 training: 1 × A100-40GB or 1 × A6000, ~8–12 hours for our setting.
-- P0 / P1 / P2 baselines: 1 × consumer GPU (e.g. RTX 3090, 24 GB) is sufficient.
-- CPU-only will work for the smoke tests but is not practical for training.
+**Hardware.** Trained on a single NVIDIA H100. CPU works for the smoke tests
+(`python -m code.diffusion.{LD4LG,DPLM}.smoke_test`) but is not practical for
+training.
 
 ## 6. Results / Insights
 
-Preliminary results on the same held-out split, same recovery metric on
-corrupted AA positions:
+Headline numbers across 9,216 generated sequences (18 cells × 512). Bold =
+best per metric.
 
-| Experiment | Type | Best AA Recovery | Params | Notes |
-|---|---|---|---|---|
-| P1 / P2 (ESM-LoRA)       | MLM baseline            | val 0.3636 / 0.3671 | 11.9 M / 15.2 M | full V-region |
-| v1A / v1B                | Plain CDR3 diffusion    | ~46–47%             | 7.5 M / 58.3 M  | no germline |
-| v3_prod                  | + germline cross-attn   | **56.89%**          | 10.2 M          | first clean baseline |
-| v3_scale                 | + depth / width         | 57.69%              | 12.5–22.8 M     | scaling ≈ flat |
-| **v4_dplm2**             | **DPLM-2 + edit head**  | **77.00%**          | **19.0 M**      | **+20 pp** |
+| Metric | DPLM-default (T=1.0, p=0.95) | DPLM-tuned (T=1.3, p=0.99) | LD4LG (w=2.0) |
+|---|---|---|---|
+| Linker recovery        | **100.0%** | 92.7%       | 99.7%       |
+| 4-gram diversity       | 0.051      | **0.207**   | 0.136       |
+| V-family accuracy      | **99.98%** | 93.8%       | 99.6%       |
+| Sequence Recovery Rate | 0.476      | 0.564       | **0.753**   |
+| Held-out NLL perplexity| 1.37       | 1.37        | **1.08**    |
+| HMMER hit rate         | **100%**   | 99.5%       | **100%**    |
 
-Key takeaway: the +20 pp breakthrough is not from scale — it is from DPLM-2's
-training recipe (shared token stream so germline is directly visible to
-self-attention, plus MDLM `w(t)` weighting), combined with the edit-head
-auxiliary loss that regularizes the model toward an explicit
-`germline + V(D)J edits + SHM` factorization.
-
-*(These numbers are from our pre-report exploratory runs and may be updated in
-the final report; v5 latent-diffusion numbers will be added if that track
-produces publishable results.)*
+The most surprising finding is that the **same DPLM weights** span
+96.7% → 25.9% foldability and 0.051 → 0.207 diversity, varying only
+(T, top-p). Decoding choice is therefore a primary determinant of where a
+discrete-diffusion model lands on the quality–diversity frontier. LD4LG and
+DPLM are not totally ordered—they occupy distinct frontier regions, with
+LD4LG dominating on SRR and perplexity while DPLM-default dominates on
+foldability and conditional fidelity.
 
 ## 7. Conclusion
 
-Re-implementing DPLM-2 from scratch and adapting it to BCR CDR3 generation gave
-us a concrete mechanistic lesson: **how conditioning information is fused into
-the denoiser matters more than raw model capacity.** Giving the model germline
-CDR3 via cross-attention (v3) buys us ~10 pp; giving it via a shared token
-stream under an MDLM-weighted absorbing-state loss (v4) buys us ~20 pp more.
-The edit-head extension further reframes the generation problem as explicit
-edit-op prediction, producing interpretable per-position predictions
-(TEMPLATED / SUBSTITUTED / INSERTED / TRIMMED) alongside the AA distribution.
+Two takeaways: (1) **decoding choice is a primary determinant** of where a
+discrete-diffusion model lands on the quality–diversity frontier, with
+weights held fixed; (2) **continuous latent and discrete absorbing
+diffusion are not totally ordered**—the choice is application-conditioned.
 
 ## 8. References
 
-1. Wang, X., Zheng, Z., Ye, F., Xue, D., Huang, S., Gu, Q. **DPLM-2: A Multimodal Diffusion Protein Language Model.** ICLR 2025. <https://bytedance.github.io/dplm/dplm-2>
-2. Lovelace, J., Kishore, V., Wan, C., Shekhtman, E., Weinberger, K. Q. **Latent Diffusion for Language Generation.** NeurIPS 2023. <https://github.com/justinlovelace/latent-diffusion-for-language>
-3. Sahoo, S. S., Arriola, M., Schiff, Y., Gokaslan, A., Marroquin, E., Chiu, J. T., Rush, A. M., Kuleshov, V. **Simple and Effective Masked Diffusion Language Models (MDLM).** NeurIPS 2024.
-4. Austin, J., Johnson, D. D., Ho, J., Tarlow, D., van den Berg, R. **Structured Denoising Diffusion Models in Discrete State-Spaces (D3PM).** NeurIPS 2021.
-5. Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., Chen, W. **LoRA: Low-Rank Adaptation of Large Language Models.** ICLR 2022.
-6. Lin, Z., Akin, H., Rao, R., Hie, B., Zhu, Z., Lu, W., Smetanin, N., Verkuil, R., Kabeli, O., Shmueli, Y., dos Santos Costa, A., Fazel-Zarandi, M., Sercu, T., Candido, S., Rives, A. **Evolutionary-scale prediction of atomic-level protein structure (ESM-2).** Science, 2023.
-7. Kovaltsuk, A., Leem, J., Kelm, S., Snowden, J., Deane, C. M., Krawczyk, K. **Observed Antibody Space: A Resource for Data Mining Next-Generation Sequencing of Antibody Repertoires.** J. Immunol., 2018.
+1. Lovelace, J., Kishore, V., Wan, C., Shekhtman, E., Weinberger, K. Q.
+   *Latent Diffusion for Language Generation.* NeurIPS 2023.
+2. Wang, X., Zheng, Z., Ye, F., Xue, D., Huang, S., Gu, Q.
+   *Diffusion Language Models Are Versatile Protein Learners (DPLM).*
+   ICLR 2024.
+3. Olsen, T. H., Boyles, F., Deane, C. M.
+   *Observed Antibody Space: A diverse database of cleaned, annotated, and
+   translated unpaired and paired antibody sequences.* Protein Science 31(1),
+   2022.
+4. Ruffolo, J. A., Chu, L.-S., Mahajan, S. P., Gray, J. J.
+   *Fast, accurate antibody structure prediction from deep learning
+   (IgFold).* Nature Communications 14:2389, 2023.
+5. Steinegger, M., Söding, J. *MMseqs2 enables sensitive protein sequence
+   searching for the analysis of massive data sets.* Nature Biotechnology
+   35:1026–1028, 2017.
+6. Salimans, T., Ho, J. *Progressive Distillation for Fast Sampling of
+   Diffusion Models (v-prediction).* ICLR 2022.
+7. Ho, J., Salimans, T. *Classifier-Free Diffusion Guidance.* NeurIPS
+   Workshop on Deep Generative Models, 2022.
+8. Bao, F. et al. *All Are Worth Words: A ViT Backbone for Diffusion Models
+   (U-ViT).* CVPR 2023.
+9. Eddy, S. R. *Accelerated Profile HMM Searches.* PLoS Computational Biology
+   7(10):e1002195, 2011.
 
 ## 9. Acknowledgements
 
-This project was developed by **Yunqi Li** and **Yonglin Zhang** as coursework
-for **CS 4782 — Introduction to Deep Learning** at Cornell University
-(Spring 2026), under the guidance of the course staff. We thank the
-instructors and TAs for feedback on proposal #302 and for approving the scope
-pivot documented in
-[`report/ED_POST_DRAFT_v4.md`](./report/ED_POST_DRAFT_v4.md).
-
-We gratefully acknowledge the authors of DPLM-2 (Wang et al., ByteDance
-Research & Nanjing University) — whose paper is the primary re-implementation
-target — and of MDLM, D3PM, LoRA, and ESM-2, whose work this project builds
-upon. Our exploratory `v5_latent` track adapts **Latent Diffusion for
-Language Generation** (Lovelace, Kishore, Wan, Shekhtman, & Weinberger,
-Cornell, NeurIPS 2023), which **Prof. Weinberger — one of the instructors of
-this course — covered in CS 4782 lectures**; we thank him for introducing the
-method and for the broader framing of diffusion for discrete sequences that
-made this project possible. We thank the curators of the Observed Antibody
-Space (OAS) database for making large-scale paired BCR data available.
+This project was developed at Cornell University as coursework for
+**CS 5782/4782 — Introduction to Deep Learning** (Spring 2026). We thank the
+course instructors, **Prof. Kilian Weinberger** and **Prof. Wei-Chiu Ma**,
+for their guidance and feedback throughout the semester, and especially
+Prof. Weinberger for introducing **Latent Diffusion for Language Generation**
+(LD4LG) in lecture—his broader framing of diffusion for discrete sequences
+made this project possible. We also thank **Shaowen Jiang** (De Vlaminck Lab,
+Cornell) for antibody-domain guidance, and the curators of the **Observed
+Antibody Space** database. Compute resources were provided by **NSF ACCESS /
+Purdue Anvil** (data preprocessing) and **Cornell University** (model
+training, sampling, and evaluation).
