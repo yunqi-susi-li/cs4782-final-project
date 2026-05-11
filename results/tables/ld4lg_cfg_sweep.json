@@ -1,0 +1,154 @@
+{
+  "configs_tested": 5,
+  "configs_total": 5,
+  "cells": [
+    "IGHM_IGHV1_K",
+    "IGHG_IGHV1_K",
+    "IGHA_IGHV1_K"
+  ],
+  "weights": [
+    1.0,
+    1.5,
+    2.0,
+    3.0,
+    5.0
+  ],
+  "n_per_config": 128,
+  "results": [
+    {
+      "cfg_weight": 1.0,
+      "mean_div_4gram": 0.22441791500526098,
+      "mean_valid": 1.0,
+      "mean_linker": 0.9973958333333334,
+      "per_cell": {
+        "IGHM_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.14610538749261762
+        },
+        "IGHG_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.26384321978166514
+        },
+        "IGHA_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 0.9921875,
+          "div_4gram": 0.26330513774150016
+        }
+      },
+      "elapsed_s": 55.41124129295349
+    },
+    {
+      "cfg_weight": 1.5,
+      "mean_div_4gram": 0.21924516572682565,
+      "mean_valid": 1.0,
+      "mean_linker": 1.0,
+      "per_cell": {
+        "IGHM_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.12946853560056462
+        },
+        "IGHG_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.2646778591845451
+        },
+        "IGHA_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.2635891023953672
+        }
+      },
+      "elapsed_s": 131.05885815620422
+    },
+    {
+      "cfg_weight": 2.0,
+      "mean_div_4gram": 0.22005808807035945,
+      "mean_valid": 1.0,
+      "mean_linker": 0.9973958333333334,
+      "per_cell": {
+        "IGHM_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.12904815082441043
+        },
+        "IGHG_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 0.9921875,
+          "div_4gram": 0.2662461396938038
+        },
+        "IGHA_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.2648799736928642
+        }
+      },
+      "elapsed_s": 206.60834169387817
+    },
+    {
+      "cfg_weight": 3.0,
+      "mean_div_4gram": 0.22443389023198457,
+      "mean_valid": 1.0,
+      "mean_linker": 1.0,
+      "per_cell": {
+        "IGHM_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.12293463234810086
+        },
+        "IGHG_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.27508281675358326
+        },
+        "IGHA_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.2752842215942696
+        }
+      },
+      "elapsed_s": 282.3228552341461
+    },
+    {
+      "cfg_weight": 5.0,
+      "mean_div_4gram": 0.23814649940974017,
+      "mean_valid": 1.0,
+      "mean_linker": 0.9947916666666666,
+      "per_cell": {
+        "IGHM_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.12338262476894639
+        },
+        "IGHG_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 1.0,
+          "div_4gram": 0.2962247470613274
+        },
+        "IGHA_IGHV1_K": {
+          "n": 128,
+          "share_valid_aa": 1.0,
+          "share_linker": 0.984375,
+          "div_4gram": 0.2948321263989467
+        }
+      },
+      "elapsed_s": 358.2895712852478
+    }
+  ]
+}
