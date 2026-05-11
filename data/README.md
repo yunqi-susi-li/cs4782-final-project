@@ -1,47 +1,41 @@
-# `data/` — Datasets & preprocessing
+# `data/` — OAS dataset and preprocessing
 
-Raw OAS dumps are large (tens of GB) and are **not** committed to this repo.
-This directory holds:
+Raw OAS dumps are large (tens of GB) and **not** committed to this repo.
+This directory holds notes on data sources and licensing.
 
-1. Small, version-controlled metadata (schemas, the specific OAS studies used,
-   the exact dedup/cluster parameters we ran).
-2. A reproducible pipeline that, given a fresh machine, downloads and
-   preprocesses the data into the split we train on.
+## Source
 
-## Obtaining the data
+Training and evaluation data come from the **Observed Antibody Space (OAS)**,
+a public database of B-cell-receptor sequences:
 
-1. **Source:** Observed Antibody Space (OAS), paired heavy/light BCR repertoire
-   subset.
-   - Kovaltsuk et al., *"Observed Antibody Space: A Resource for Data Mining
-     Next-Generation Sequencing of Antibody Repertoires"*, J. Immunol., 2018.
-   - Project site: <https://opig.stats.ox.ac.uk/webapps/oas/>
+- Olsen, T. H., Boyles, F., Deane, C. M. *Observed Antibody Space: A diverse
+  database of cleaned, annotated, and translated unpaired and paired antibody
+  sequences.* **Protein Science 31(1):141–146, 2022.**
+- Database: <https://opig.stats.ox.ac.uk/webapps/oas/>
 
-2. Select **paired** BCR studies (heavy chain used in our experiments).
+We use the **paired** subset (both heavy and light chains sequenced from
+the same B cell).
 
-3. Run the preprocessing pipeline:
-   ```bash
-   python -m code.common.data --stage download --out data/raw/
-   python -m code.common.data --stage preprocess \
-       --in data/raw/ --out data/processed/ \
-       --cluster-identity 0.95 --min-cdr3-len 5 --max-cdr3-len 30
-   ```
+## Preprocessing
 
-## Final corpus
+After downloading OAS paired chains as `.tar.gz` exports, run:
 
-- **2.28M** unique heavy-chain sequences after dedup + 95% identity clustering.
-- Train / val / test split enforced at the cluster level.
-- Measured **< 0.001%** sequence-level train↔val↔test leakage.
-- Per-record fields: `V_gene`, `D_gene`, `J_gene`, `isotype`, `SHM_rate`,
-  `germline_CDR3` (IMGT-reconstructed), `observed_CDR3`.
-
-## Directory layout (after preprocessing)
-
+```bash
+python -m code.diffusion.LD4LG.preprocess \
+    --archives <oas_export.tar.gz> \
+    --out processed/ \
+    --max-len 288
 ```
-data/
-├── raw/           # gitignored — OAS downloads
-├── processed/     # gitignored — parquet shards + split indices
-└── splits/
-    ├── train.txt  # cluster IDs (small, committed)
-    ├── val.txt
-    └── test.txt
-```
+
+This produces the int16 token memmaps consumed by both diffusion tracks.
+See [`../code/data_preprocessing/README.md`](../code/data_preprocessing/README.md)
+for the full pipeline description.
+
+## Corpus statistics
+
+After MMseqs2 deduplication at 95% / 90% sequence identity:
+
+- **2.17M** paired V_H ⊕ GGGGSGGGGS ⊕ V_L chains
+- 0% sequence-level train/test leakage
+- Held-out 18-cell stratification (3 isotypes × 3 V-families × 2 light loci):
+  **200 reference + 512 generated** sequences per cell
