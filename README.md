@@ -220,8 +220,9 @@ course instructors, **Prof. Kilian Weinberger** and **Prof. Wei-Chiu Ma**,
 for their guidance and feedback throughout the semester, and especially
 Prof. Weinberger for introducing **Latent Diffusion for Language Generation**
 (LD4LG) in lecture—his broader framing of diffusion for discrete sequences
-made this project possible. We also thank **Shaowen Jiang** (De Vlaminck Lab,
-Cornell) for antibody-domain guidance, and the curators of the **Observed
+made this project possible. We thanks De Vlaminck Lab for the support and 
+especially thanks **Shaowen Jiang** (De Vlaminck Lab, Cornell) for 
+antibody-domain guidance, and the curators of the **Observed
 Antibody Space** database. Compute resources were provided by **NSF ACCESS /
 Purdue Anvil** (data preprocessing) and **Cornell University** (model
 training, sampling, and evaluation).
