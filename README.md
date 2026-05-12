@@ -213,24 +213,25 @@ we saw across the 18 stratification cells.
 2. Wang, X., Zheng, Z., Ye, F., Xue, D., Huang, S., Gu, Q.
    *Diffusion Language Models Are Versatile Protein Learners (DPLM).*
    ICLR 2024. <https://github.com/bytedance/dplm>
-3. Olsen, T. H., Boyles, F., Deane, C. M.
-   *Observed Antibody Space: A diverse database of cleaned, annotated, and
-   translated unpaired and paired antibody sequences.* Protein Science 31(1),
-   2022.
-4. Ruffolo, J. A., Chu, L.-S., Mahajan, S. P., Gray, J. J.
+3. Ho, J., Salimans, T. *Classifier-Free Diffusion Guidance.*
+   NeurIPS Workshop on Deep Generative Models, 2022.
+4. Salimans, T., Ho, J. *Progressive Distillation for Fast Sampling of
+   Diffusion Models.* ICLR 2022. (v-prediction)
+5. Bao, F., Nie, S., Xue, K., Cao, Y., Li, C., Su, H., Zhu, J.
+   *All Are Worth Words: A ViT Backbone for Diffusion Models (U-ViT).*
+   CVPR 2023.
+6. Eddy, S. R. *Accelerated Profile HMM Searches.* PLOS Computational
+   Biology 7(10):e1002195, 2011. (HMMER3)
+7. Ruffolo, J. A., Chu, L.-S., Mahajan, S. P., Gray, J. J.
    *Fast, accurate antibody structure prediction from deep learning.*
    Nature Communications 14:2389, 2023. (IgFold)
-5. Steinegger, M., Söding, J. *MMseqs2 enables sensitive protein sequence
+8. Olsen, T. H., Boyles, F., Deane, C. M.
+   *Observed Antibody Space: A diverse database of cleaned, annotated,
+   and translated unpaired and paired antibody sequences.*
+   Protein Science 31(1), 2022.
+9. Steinegger, M., Söding, J. *MMseqs2 enables sensitive protein sequence
    searching for the analysis of massive data sets.* Nature Biotechnology
    35:1026–1028, 2017.
-6. Salimans, T., Ho, J. *Progressive Distillation for Fast Sampling of
-   Diffusion Models (v-prediction).* ICLR 2022.
-7. Ho, J., Salimans, T. *Classifier-Free Diffusion Guidance.* NeurIPS
-   Workshop on Deep Generative Models, 2022.
-8. Bao, F. et al. *All Are Worth Words: A ViT Backbone for Diffusion Models
-   (U-ViT).* CVPR 2023.
-9. Eddy, S. R. *Accelerated Profile HMM Searches.* PLoS Computational Biology
-   7(10):e1002195, 2011.
 
 ## 9. Acknowledgements
 
@@ -244,5 +245,7 @@ made this project possible. We also thank the De Vlaminck Lab for their
 support, and especially **Shaowen Jiang** (De Vlaminck Lab, Cornell) for
 antibody-domain guidance, and the curators of the **Observed Antibody
 Space** database. Compute resources were provided by **NSF ACCESS /
-Purdue Anvil** (data preprocessing) and **Cornell University** — including
-the **AIDA cluster** — for model training, sampling, and evaluation.
+Purdue Anvil** (data preprocessing) and a **Cornell-managed Slurm compute cluster** (model training, sampling, and evaluation).
+We also acknowledge **Karpathy's `autoresearch`**
+([github.com/karpathy/autoresearch](https://github.com/karpathy/autoresearch))
+as a research-iteration scaffold used during code development.
