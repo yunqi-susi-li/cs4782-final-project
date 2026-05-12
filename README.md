@@ -18,14 +18,16 @@ Cornell University · **Authors:** Yunqi Li, Yonglin Zhang
 
 ## 1. Introduction
 
-This repository re-implements and compares two papers on the same conditional
-sequence-generation task:
+This is the GitHub **re-implementation deliverable** for our CS 5782/4782
+final project. The repo re-implements and compares two papers on the same
+conditional sequence-generation task:
 
 - **Latent Diffusion for Language Generation (LD4LG).** Lovelace, J., Kishore,
   V., Wan, C., Shekhtman, E., Weinberger, K. Q. NeurIPS 2023.
   <https://github.com/justinlovelace/latent-diffusion-for-language>
 - **Diffusion Language Models Are Versatile Protein Learners (DPLM).**
   Wang, X., Zheng, Z., Ye, F., Xue, D., Huang, S., Gu, Q. ICLR 2024.
+  <https://github.com/bytedance/dplm>
 
 The task is conditional generation of paired antibody chains
 (V$_H$ ⊕ V$_L$): each training example is a $\le$288-token amino-acid string
@@ -66,7 +68,7 @@ cs4782-final-project/
 │       └── LD4LG/                  continuous latent diffusion
 ├── data/                           OAS download + preprocessing notes
 ├── results/{figures,tables}        per-cell metrics, Pareto data
-├── poster/                         final-presentation poster (PDF)
+├── poster/                         final-presentation poster ([PDF](poster/DL5782_Final_Project_Poster.pdf))
 └── report/                         2-page summary (PDF)
 ```
 
@@ -114,22 +116,29 @@ cd cs4782-final-project
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Preprocess raw OAS → int16 memmaps (see data/README.md)
+# 2. Similarity-reduce paired OAS to a leakage-free split
+#    (see code/data_preprocessing/README.md for the 7-step MMseqs2 pipeline)
+bash code/data_preprocessing/run_pipeline.sh \
+    --input    /path/to/oas_paired.pkl \
+    --output   processed/dedup \
+    --receptor bcr --threshold 0.95
+
+# 3. Tokenize the dedup'd splits → int16 memmaps (see data/README.md)
 python -m code.diffusion.LD4LG.preprocess \
     --archives <oas_export.tar.gz> --out processed/ --max-len 288
 
-# 3. Train LD4LG (~9 h on a single H100)
+# 4. Train LD4LG (~9 h on a single H100)
 python -m code.diffusion.LD4LG.train_autoencoder \
     --data processed/ --out runs/ae --steps 50000
 python -m code.diffusion.LD4LG.train_diffusion \
     --data processed/ --ae-ckpt runs/ae/autoencoder_latest.pt \
     --out runs/ld4lg --steps 250000
 
-# 4. Train DPLM (~5 h on a single H100)
+# 5. Train DPLM (~5 h on a single H100)
 python -m code.diffusion.DPLM.train \
     --data processed/ --out runs/dplm --steps 100000
 
-# 5. Sample one cell from each model
+# 6. Sample one cell from each model
 python -m code.diffusion.LD4LG.sample \
     --ae-ckpt runs/ae/autoencoder_latest.pt \
     --diff-ckpt runs/ld4lg/diffusion_latest.pt \
@@ -142,12 +151,12 @@ python -m code.diffusion.DPLM.sample \
     --sample-mode stochastic --temperature 1.0 --top-p 0.95 \
     --out samples/dplm/IGHG_IGHV3_K.fasta
 
-# 6. DPLM decoding sweep (locates Pareto-best (T, top-p))
+# 7. DPLM decoding sweep (locates Pareto-best (T, top-p))
 python -m code.diffusion.DPLM.sampling_sweep \
     --ckpt runs/dplm/dplm_latest.pt \
     --out results/dplm_sweep.json --n-per-config 64
 
-# 7. Evaluate one generated FASTA
+# 8. Evaluate one generated FASTA
 python -m code.diffusion.LD4LG.eval \
     --fasta samples/ld4lg/IGHG_IGHV3_K.fasta \
     --train-tokens processed/train.tokens.npy \
@@ -188,13 +197,19 @@ discrete-diffusion model lands on the quality–diversity frontier, with
 weights held fixed; (2) **continuous latent and discrete absorbing
 diffusion are not totally ordered**—the choice is application-conditioned.
 
+A natural next step is a **per-cell adaptive decoding policy** that picks
+(T, top-p) conditioned on (isotype, V-family, locus): the optimal operating
+point is unlikely to be cell-invariant given the heterogeneous foldability
+we saw across the 18 stratification cells.
+
 ## 8. References
 
 1. Lovelace, J., Kishore, V., Wan, C., Shekhtman, E., Weinberger, K. Q.
    *Latent Diffusion for Language Generation.* NeurIPS 2023.
+   <https://github.com/justinlovelace/latent-diffusion-for-language>
 2. Wang, X., Zheng, Z., Ye, F., Xue, D., Huang, S., Gu, Q.
    *Diffusion Language Models Are Versatile Protein Learners (DPLM).*
-   ICLR 2024.
+   ICLR 2024. <https://github.com/bytedance/dplm>
 3. Olsen, T. H., Boyles, F., Deane, C. M.
    *Observed Antibody Space: A diverse database of cleaned, annotated, and
    translated unpaired and paired antibody sequences.* Protein Science 31(1),
@@ -222,9 +237,9 @@ course instructors, **Prof. Kilian Weinberger** and **Prof. Wei-Chiu Ma**,
 for their guidance and feedback throughout the semester, and especially
 Prof. Weinberger for introducing **Latent Diffusion for Language Generation**
 (LD4LG) in lecture—his broader framing of diffusion for discrete sequences
-made this project possible. We thanks De Vlaminck Lab for the support and 
-especially thanks **Shaowen Jiang** (De Vlaminck Lab, Cornell) for 
-antibody-domain guidance, and the curators of the **Observed
-Antibody Space** database. Compute resources were provided by **NSF ACCESS /
+made this project possible. We also thank the De Vlaminck Lab for their
+support, and especially **Shaowen Jiang** (De Vlaminck Lab, Cornell) for
+antibody-domain guidance, and the curators of the **Observed Antibody
+Space** database. Compute resources were provided by **NSF ACCESS /
 Purdue Anvil** (data preprocessing) and **Cornell University** (model
 training, sampling, and evaluation).
