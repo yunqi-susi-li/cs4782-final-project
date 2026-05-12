@@ -52,8 +52,9 @@ No other AI / LLM products were involved.
   per-cell SRR evaluation are all our own design choices.
 - **Dataset, conditioning, metrics, hyperparameters.** Selection of OAS;
   the three conditioning labels (isotype / V-family / light-chain locus);
-  the six headline metrics (linker recovery, 4-gram diversity, V-family
-  accuracy, SRR, held-out NLL, HMMER hit rate); model hyperparameters
+  the seven headline metrics (linker recovery, 4-gram diversity, V-family
+  accuracy, SRR, held-out NLL, HMMER hit rate, IgFold pLDDT > 70 foldable
+  share); model hyperparameters
   (12-layer pre-LN Transformer, 768-dim, GeGLU FFN, QK-RMSNorm, AdaLN,
   U-ViT-style skips, 32 × 64 AE latent geometry, 24-symbol AA
   vocabulary); decoding-grid bounds — all set by us.

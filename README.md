@@ -101,11 +101,11 @@ replaces the released codebase's greedy argmax, which we observed collapses
 to a single near-template output per condition; a 20-configuration grid
 sweep (T × top-p) to locate the quality–diversity sweet spot.
 
-**Evaluation** (`code/common/`). Six metrics: linker recovery (format),
+**Evaluation** (`code/common/`). Seven metrics: linker recovery (format),
 4-gram diversity, V-family classifier accuracy (conditional fidelity),
-Sequence Recovery Rate (SRR), held-out NLL perplexity, HMMER hit rate. Plus
-exact-match and Hamming-$\le 3$ training memorization checks across all
-9,216 generated sequences.
+Sequence Recovery Rate (SRR), held-out NLL perplexity, HMMER hit rate, and
+IgFold pLDDT > 70 foldable share. Plus exact-match and Hamming-$\le 3$
+training memorization checks across all 9,216 generated sequences.
 
 ## 5. Reproduction Steps
 
@@ -175,12 +175,13 @@ best per metric.
 
 | Metric | DPLM-default (T=1.0, p=0.95) | DPLM-tuned (T=1.3, p=0.99) | LD4LG (w=2.0) |
 |---|---|---|---|
-| Linker recovery        | **100.0%** | 92.7%       | 99.7%       |
-| 4-gram diversity       | 0.051      | **0.207**   | 0.136       |
-| V-family accuracy      | **99.98%** | 93.8%       | 99.6%       |
-| Sequence Recovery Rate | 0.476      | 0.564       | **0.753**   |
-| Held-out NLL perplexity| 1.37       | 1.37        | **1.08**    |
-| HMMER hit rate         | **100%**   | 99.5%       | **100%**    |
+| Linker recovery               | **100.0%** | 92.7%       | 99.7%       |
+| 4-gram diversity              | 0.051      | **0.207**   | 0.136       |
+| V-family accuracy             | **99.98%** | 93.8%       | 99.6%       |
+| Sequence Recovery Rate        | 0.476      | 0.564       | **0.753**   |
+| Held-out NLL perplexity       | 1.37       | 1.37        | **1.08**    |
+| HMMER hit rate                | **100%**   | 99.5%       | **100%**    |
+| Foldable share (pLDDT > 70)   | **96.7%**  | 25.9%       | 38.8%       |
 
 The most surprising finding is that the **same DPLM weights** span
 96.7% → 25.9% foldability and 0.051 → 0.207 diversity, varying only
@@ -241,5 +242,5 @@ made this project possible. We also thank the De Vlaminck Lab for their
 support, and especially **Shaowen Jiang** (De Vlaminck Lab, Cornell) for
 antibody-domain guidance, and the curators of the **Observed Antibody
 Space** database. Compute resources were provided by **NSF ACCESS /
-Purdue Anvil** (data preprocessing) and **Cornell University** (model
-training, sampling, and evaluation).
+Purdue Anvil** (data preprocessing) and **Cornell University** — including
+the **AIDA cluster** — for model training, sampling, and evaluation.
