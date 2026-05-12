@@ -5,8 +5,11 @@ antibody sequence generation, plus shared evaluation utilities.
 
 ```
 code/
-├── data_preprocessing/   notes on the OAS → memmap pipeline
-│                         (script lives in diffusion/LD4LG/preprocess.py)
+├── data_preprocessing/   MMseqs2 similarity-reduction pipeline:
+│                         paired-chain dedup at 95%/90% identity →
+│                         leakage-free train/val/test splits. The
+│                         downstream OAS → token-memmap script lives
+│                         in diffusion/LD4LG/preprocess.py.
 ├── common/               shared evaluation suite used by both diffusion
 │                         tracks: foldability (IgFold), HMMER hit rate,
 │                         token recovery, V-gene fidelity, perplexity
