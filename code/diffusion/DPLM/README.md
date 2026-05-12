@@ -9,6 +9,14 @@ adapted to paired antibody (V$_H \oplus$ V$_L$) generation with multi-condition
 classifier-free guidance. Direct counterpart of the continuous latent diffusion
 track in `../LD4LG/`.
 
+> **Re-implementation status.** Independent PyTorch re-implementation of the
+> training objective and sampler described in Wang et al. (ICLR 2024). No
+> source code from the upstream repository
+> (<https://github.com/bytedance/dplm>, Apache-2.0) was copied; only the
+> paper and codebase were consulted for reference. Released under the MIT
+> license alongside the rest of this project. See [`../../../NOTICE.md`](../../../NOTICE.md)
+> for the full third-party-attribution table.
+
 ## Architecture
 
 12-layer bidirectional pre-LN Transformer over a 25-symbol AA vocabulary
