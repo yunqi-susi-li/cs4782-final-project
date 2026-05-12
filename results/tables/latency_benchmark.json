@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "samples": 256,
+      "elapsed_s": 65.44779372215271,
+      "samples_per_sec": 3.911514589579654,
+      "ms_per_sample": 255.65544422715902,
+      "config": "LD4LG-250"
+    },
+    {
+      "samples": 256,
+      "elapsed_s": 34.70977187156677,
+      "samples_per_sec": 7.375444613904469,
+      "ms_per_sample": 135.5850463733077,
+      "config": "LD4LG-50"
+    },
+    {
+      "samples": 256,
+      "elapsed_s": 79.35742855072021,
+      "samples_per_sec": 3.2259109786600644,
+      "ms_per_sample": 309.98995527625084,
+      "config": "DPLM-default"
+    },
+    {
+      "samples": 256,
+      "elapsed_s": 79.37881898880005,
+      "samples_per_sec": 3.22504168317395,
+      "ms_per_sample": 310.0735116750002,
+      "config": "DPLM-tuned"
+    },
+    {
+      "samples": 256,
+      "elapsed_s": 79.26357555389404,
+      "samples_per_sec": 3.2297306576327327,
+      "ms_per_sample": 309.6233420073986,
+      "config": "DPLM-greedy"
+    }
+  ],
+  "batch_size": 32,
+  "num_batches": 8
+}
