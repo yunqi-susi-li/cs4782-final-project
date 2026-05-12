@@ -25,7 +25,7 @@ exists).
 ## Headline numbers
 
 The summary table in the top-level [`README.md`](../README.md#6-results--insights)
-(6 metrics × 3 configurations across 9,216 generated sequences) is computed
+(7 metrics × 3 configurations across 9,216 generated sequences) is computed
 from FASTA evaluations under [`code/common/`](../code/common/) and is not
 mirrored here as JSON; the per-cell breakdown lives in those eval-report
 JSONs (one per cell), which exceed GitHub's UI-friendly size and are kept

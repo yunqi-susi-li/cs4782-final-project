@@ -19,13 +19,17 @@ The two paradigms land in different regions of the quality-diversity frontier
 
 | Configuration | 4-gram diversity | Foldable share (pLDDT > 70) | HMMER hit rate |
 |---|---|---|---|
-| **DPLM (default greedy)**  | 0.051 | **96.7%** | 100.0% |
-| **LD4LG (CFG w=2.0)**       | 0.136 | 38.8% | 100.0% |
-| **DPLM (T=1.0, top-p=0.95)**| **0.207** | 25.9% | 99.5% |
+| **DPLM (greedy)**             | ~0.005    | **~98%**  | 100.0% |
+| **DPLM (T=1.0, top-p=0.95)**  | 0.051     | 96.7%     | 100.0% |
+| **LD4LG (CFG w=2.0)**         | 0.136     | 38.8%     | 100.0% |
+| **DPLM (T=1.3, top-p=0.99)**  | **0.207** | 25.9%     | 99.5%  |
 
-DPLM with default greedy decoding produces highly foldable but very repetitive
-sequences. The stochastic sweep dramatically increases diversity at the cost of
-foldability, while LD4LG sits in between.
+DPLM with greedy decoding produces highly foldable but near-template, very
+repetitive sequences. Adding stochastic temperature + nucleus sampling
+dramatically increases diversity at the cost of foldability; LD4LG sits in
+between. Numbers match the headline table in the top-level
+[`README.md`](../../README.md) and the per-decoder breakdown in
+[`DPLM/README.md`](DPLM/README.md).
 
 ## Subdirectory layout
 
