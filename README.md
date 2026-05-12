@@ -61,8 +61,10 @@ cs4782-final-project/
 ├── code/
 │   ├── README.md
 │   ├── common/                     shared evaluation suite
-│   ├── data_preprocessing/         MMseqs2 similarity-reduction pipeline
-│   │                               (paired-chain dedup → leakage-free splits)
+│   ├── data_preprocessing/         MMseqs2 similarity-reduction pipeline:
+│   │                               7-step paired-chain dedup at 95% / 90%
+│   │                               sequence identity, 0% train/test leakage
+│   │                               audited (see PIPELINE.md for full spec)
 │   └── diffusion/
 │       ├── DPLM/                   discrete absorbing diffusion
 │       └── LD4LG/                  continuous latent diffusion
@@ -216,8 +218,8 @@ we saw across the 18 stratification cells.
    translated unpaired and paired antibody sequences.* Protein Science 31(1),
    2022.
 4. Ruffolo, J. A., Chu, L.-S., Mahajan, S. P., Gray, J. J.
-   *Fast, accurate antibody structure prediction from deep learning
-   (IgFold).* Nature Communications 14:2389, 2023.
+   *Fast, accurate antibody structure prediction from deep learning.*
+   Nature Communications 14:2389, 2023. (IgFold)
 5. Steinegger, M., Söding, J. *MMseqs2 enables sensitive protein sequence
    searching for the analysis of massive data sets.* Nature Biotechnology
    35:1026–1028, 2017.
