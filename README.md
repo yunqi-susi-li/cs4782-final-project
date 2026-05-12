@@ -70,7 +70,7 @@ cs4782-final-project/
 │       └── LD4LG/                  continuous latent diffusion
 ├── data/                           OAS download + preprocessing notes
 ├── results/{figures,tables}        per-cell metrics, Pareto data
-├── poster/                         final-presentation poster ([PDF](poster/DL5782_Final_Project_Poster.pdf))
+├── poster/                         final-presentation poster ([PDF](poster/cs5782_final_project_poster.pdf))
 └── report/                         2-page summary (PDF)
 ```
 
