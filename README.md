@@ -59,7 +59,8 @@ cs4782-final-project/
 ├── code/
 │   ├── README.md
 │   ├── common/                     shared evaluation suite
-│   ├── data_preprocessing/         OAS → memmap pipeline
+│   ├── data_preprocessing/         MMseqs2 similarity-reduction pipeline
+│   │                               (paired-chain dedup → leakage-free splits)
 │   └── diffusion/
 │       ├── DPLM/                   discrete absorbing diffusion
 │       └── LD4LG/                  continuous latent diffusion
@@ -75,9 +76,10 @@ Each subdirectory has its own README.
 
 **Dataset.** 2.17M paired V$_H$ ⊕ GGGGSGGGGS ⊕ V$_L$ chains from the Observed
 Antibody Space (OAS), MMseqs2-deduplicated at 95%/90% sequence identity for
-0% train/test leakage. Right-padded to 288 tokens over a 24-symbol AA
-vocabulary. An 18-cell stratified test split (3 isotypes × 3 V-families × 2
-loci) provides 200 reference + 512 generated sequences per cell.
+0% train/test leakage (pipeline at [`code/data_preprocessing/`](code/data_preprocessing/)).
+Right-padded to 288 tokens over a 24-symbol AA vocabulary. An 18-cell
+stratified test split (3 isotypes × 3 V-families × 2 loci) provides 200
+reference + 512 generated sequences per cell.
 
 **LD4LG.** Stage 1: encoder–Perceiver-Resampler–decoder autoencoder mapping
 tokens to a unit-norm 32 × 64 latent (val CE = 0.038, 97.7% reconstruction).
