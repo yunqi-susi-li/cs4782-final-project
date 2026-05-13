@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Sets up HMMER + Pfam Ig variable-domain HMMs for eval_hmmer.py.
 #
-# Run ONCE on whichever machine will run hmmscan (Mac or AIDA).
+# Run ONCE on whichever machine will run hmmscan (Mac or Linux).
 # Idempotent: re-running is safe.
 #
 # Usage:
@@ -27,7 +27,7 @@ if ! command -v hmmscan >/dev/null 2>&1; then
             exit 1
         fi
     elif [[ "$OS" == "Linux" ]]; then
-        # AIDA: use conda/pip-style local install (no sudo).
+        # Linux: use conda/pip-style local install (no sudo).
         if command -v conda >/dev/null 2>&1; then
             conda install -y -c bioconda hmmer
         elif command -v module >/dev/null 2>&1 && module avail hmmer 2>&1 | grep -qi hmmer; then

@@ -19,10 +19,10 @@ Install:
 
 Usage:
     python scripts/eval_foldability.py \
-        --samples-dir /mnt/beegfs/.../samples \
-        --out-dir     /mnt/beegfs/.../foldability \
+        --samples-dir <data-dir>/samples \
+        --out-dir     <data-dir>/foldability \
         --n-per-cell  50 \
-        --report      /mnt/beegfs/.../eval_reports/foldability.json
+        --report      <data-dir>/eval_reports/foldability.json
 """
 
 

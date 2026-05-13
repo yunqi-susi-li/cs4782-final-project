@@ -12,9 +12,9 @@ on the full 9,216-sample evaluation set.
 
 Usage:
     python scripts/eval_vgene_fidelity.py \
-        --train-tsv /mnt/beegfs/.../bio-diffusion/train.metadata.tsv \
-        --samples-dir /mnt/beegfs/.../ab_ld4lg/samples \
-        --out /mnt/beegfs/.../ab_ld4lg/eval_reports/vgene_fidelity.json
+        --train-tsv <data-dir>/bio-diffusion/train.metadata.tsv \
+        --samples-dir <data-dir>/ab_ld4lg/samples \
+        --out <data-dir>/ab_ld4lg/eval_reports/vgene_fidelity.json
 
 Output: a JSON with per-cell fidelity + an overall fidelity number.
 """

@@ -25,9 +25,9 @@ See `scripts/setup_hmmer.sh` for installation + DB preparation.
 
 Usage:
     python scripts/eval_hmmer.py \
-        --samples-dir /mnt/beegfs/.../samples_dplm_stochastic \
+        --samples-dir <data-dir>/samples_dplm_stochastic \
         --hmm-db      $HOME/ab_ld4lg/hmmer_db/Ig.hmm \
-        --out         /mnt/beegfs/.../eval_reports_dplm_stochastic/hmmer.json \
+        --out         <data-dir>/eval_reports_dplm_stochastic/hmmer.json \
         --tmp-dir     /tmp/hmmer_eval \
         --evalue      1e-5 \
         --cpu         4

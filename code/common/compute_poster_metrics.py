@@ -22,8 +22,8 @@ Usage:
 Or just point it at a single run:
     python scripts/compute_poster_metrics.py \
         --label DPLM_stoch \
-        --reports-dir /mnt/beegfs/.../eval_reports_dplm_stochastic \
-        --samples-dir /mnt/beegfs/.../samples_dplm_stochastic \
+        --reports-dir <data-dir>/eval_reports_dplm_stochastic \
+        --samples-dir <data-dir>/samples_dplm_stochastic \
         --out poster_metrics_dplm_stoch.json
 """
 

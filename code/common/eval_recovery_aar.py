@@ -21,9 +21,9 @@ is the standard reporting convention and matches val_loss.
 
 Usage (CPU is fine, takes ~2 min for 5000 sequences):
     python scripts/eval_recovery_aar.py \
-        --data /mnt/beegfs/.../ab_ld4lg/processed \
-        --ae-ckpt /mnt/beegfs/.../runs/ae/autoencoder_latest.pt \
-        --out  /mnt/beegfs/.../eval_reports/recovery_aar.json \
+        --data <data-dir>/ab_ld4lg/processed \
+        --ae-ckpt <data-dir>/runs/ae/autoencoder_latest.pt \
+        --out  <data-dir>/eval_reports/recovery_aar.json \
         --split test \
         --n-samples 5000
 """
