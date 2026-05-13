@@ -58,8 +58,7 @@ No other AI / LLM products were involved.
   (12-layer pre-LN Transformer, 768-dim, GeGLU FFN, QK-RMSNorm, AdaLN,
   U-ViT-style skips, 32 × 64 AE latent geometry, 24-symbol AA
   vocabulary); decoding-grid bounds — all set by us.
-- **Execution.** All experimental runs were executed by us on Cornell's
-  AIDA cluster under our own account credentials. The AI tools had no
+- **Execution.** All experimental runs were executed by us on Cornell-managed Slurm compute cluster under our own account credentials. The AI tools had no
   access to the cluster, no access to the training data, and did not run
   any experiments.
 - **Verification.** Every AI-drafted snippet of code was read, tested,
